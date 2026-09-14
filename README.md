@@ -203,7 +203,7 @@ route to the REHAU access point.
 
 ```yaml
 services:
-  rehau-bridge-proxy:
+  rehau-bridge:
     build: .
     image: rehau-bridge-proxy:local
     container_name: rehau-bridge-proxy
@@ -249,7 +249,7 @@ the container:
 ```bash
 docker compose up -d --build
 docker compose ps
-docker compose logs -f rehau-bridge-proxy
+docker compose logs -f rehau-bridge
 ```
 
 With MQTT discovery enabled, Home Assistant creates:
