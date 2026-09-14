@@ -4,7 +4,7 @@
 services:
   rehau-bridge:
     build: .
-    image: rehau-bridge:0.1.0
+    image: rehau-bridge-proxy:local
     container_name: rehau-bridge-proxy
     restart: unless-stopped
     ports:

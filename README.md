@@ -205,7 +205,7 @@ route to the REHAU access point.
 services:
   rehau-bridge-proxy:
     build: .
-    image: rehau-bridge:local
+    image: rehau-bridge-proxy:local
     container_name: rehau-bridge-proxy
     restart: unless-stopped
     network_mode: host
