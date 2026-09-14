@@ -58,7 +58,6 @@ export const buildServer = async ({
         ? { transport: { target: "pino-pretty", options: { colorize: true } } }
         : {}),
     },
-    disableRequestLogging: false,
     trustProxy: true,
     // Close keep-alive sockets immediately on app.close(). Without this, when
     // `tsx watch` restarts the bridge, idle browser connections keep the
