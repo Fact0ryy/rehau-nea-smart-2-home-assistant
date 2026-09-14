@@ -4,6 +4,9 @@ export default defineConfig({
   entry: ["src/main.ts"],
   format: ["esm"],
   target: "node24",
+  banner: {
+    js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+  },
   outDir: "dist",
   clean: true,
   sourcemap: true,
