@@ -9,6 +9,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 // ─── Severity / mode → CSS-var colour ─────────────────────────────────
 export const SEVERITY_COLOR: Record<string, string> = {
@@ -293,6 +294,7 @@ export const SetpointDial = ({
   mode?: "heating" | "cooling";
   size?: number;
 }) => {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const sweep = 260;
@@ -422,7 +424,7 @@ export const SetpointDial = ({
               letterSpacing: 0.5,
             }}
           >
-            ATTUALE {current.toFixed(1)}°
+            {t("common.current")} {current.toFixed(1)}°
           </div>
         )}
       </div>
