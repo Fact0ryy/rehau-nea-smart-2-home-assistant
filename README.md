@@ -5,12 +5,17 @@ heating / cooling base station. Talks straight to the device on the LAN
 (HTTP scrape) and re-publishes everything as MQTT discovery entities plus a
 clean web UI served via HA ingress.
 
+> **About this fork.** This fork builds on
+> [`manuxio/rehau-nea-smart-2-home-assistant`](https://github.com/manuxio/rehau-nea-smart-2-home-assistant)
+> and adds robust energy-level parsing, verified Holiday writes, a live System
+> refresh on page entry, and an optional proxy for the native REHAU web UI.
+
 > **v6.0.0 is a complete rewrite.** The previous releases used the REHAU
 > cloud (Playwright login, e-mail 2FA, OAuth2). This version drops all of
 > that — it speaks HTTP directly to the base station. No e-mail, no 2FA,
 > no third-party servers, no rate limits, no privacy surface.
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A//github.com/manuxio/rehau-nea-smart-2-home-assistant)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A//github.com/Fact0ryy/rehau-nea-smart-2-home-assistant)
 
 > ⚡ **No Home Assistant? No add-on? No problem.** There's now a standalone
 > **firmware** for the Olimex ESP32-POE that becomes the whole integration on
@@ -133,6 +138,13 @@ Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
   exposed directly on `http://<ha-host>:8080/` for fullscreen / PWA use.
 - **Auto-login through HA ingress** — clicking the sidebar entry drops
   you straight into the dashboard, no password prompt.
+- **Reliable global energy control** — malformed duplicate `selected`
+  options from REHAU firmware are resolved like a browser, and Holiday
+  writes remain pending until the base station confirms them.
+- **Fresh System state on entry** — opening the System page triggers one
+  targeted device refresh instead of waiting for the normal poll interval.
+- **Optional native web proxy** — expose the AP-only REHAU interface through
+  the bridge host without running a separate proxy container.
 - **Mobile-first**: PWA manifest, status-bar safe areas, scrollbars
   hidden, pinch zoom disabled, font scales with the OS text-size
   preference. Add to home screen → fullscreen app.
@@ -169,7 +181,8 @@ Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
    discovery payloads (climate, sensor, switch, binary_sensor) so HA
    builds the device card automatically.
 4. The Fastify server exposes a JSON REST API (`/api/v1/*`), a Swagger
-   UI (`/docs`), and the bundled React SPA at `/`.
+  UI (`/docs`), and the bundled React SPA at `/`. When enabled, a second
+  listener transparently proxies the native REHAU web UI.
 
 ### Why local, not cloud
 
@@ -218,7 +231,7 @@ If your installation is currently cloud-only, you'll need to:
 1. **Add this repository** to your Home Assistant Supervisor:
    - Settings → Add-ons → Add-on Store → **⋮** (top right) → **Repositories**
    - Paste:
-     `https://github.com/manuxio/rehau-nea-smart-2-home-assistant`
+     `https://github.com/Fact0ryy/rehau-nea-smart-2-home-assistant`
    - **Add** and close.
 
    *(Or click the **Add to Home Assistant** badge at the top of this README.)*
@@ -283,6 +296,18 @@ All options live in the add-on's *Configuration* tab. Defaults shown.
 | `expose_calibration` | `true` | Publish calibration offsets as diagnostic sensors |
 | `room_floors` | *(empty)* | UI-only floor mapping, format `0:Floor 1,1:Floor 1,2:Ground floor` |
 | `log_level` / `log_format` | `info` / `json` | `fatal/error/warn/info/debug/trace`, `json` or `pretty` |
+
+### Native REHAU web proxy
+
+Set `device_proxy_enabled: true` to make the base station's AP-only web UI
+reachable through the bridge host. Open
+`http://<bridge-host>:<device_proxy_port>/`; the default proxy port is `8092`.
+The bridge follows the operating system route to `device_url`, so a host with a
+dedicated interface for the REHAU access point needs no interface setting in the
+application.
+
+The proxy does not add authentication. Keep it on a trusted LAN and never expose
+the proxy port directly to the internet.
 
 ---
 
@@ -377,11 +402,18 @@ the REHAU display either, fix `FanH` there first.
 
 ## Development
 
-Source for the bridge + web UI is in a separate monorepo:
-https://github.com/manuxio/rehau-nea-smart-2-api (private during dev,
-public soon). This repo only ships the **packaged add-on**: pre-built
-`dist/main.js` (tsup bundle) + pre-built React SPA, plus the HA
-manifest, Dockerfile, and run script.
+Source for the bridge and web UI lives in this repository under `apps/`, with
+shared types under `packages/`. The packaged Home Assistant add-on is under
+`rehau-bridge/`.
+
+Requires Node.js 22 or newer. Install dependencies and validate a change with:
+
+```bash
+npm ci
+npm test
+npm run typecheck
+npm run build
+```
 
 Releases bump `version` in `rehau-bridge/config.yaml`; HA's Add-on
 Store shows an *Update* button when it differs from what's installed.
