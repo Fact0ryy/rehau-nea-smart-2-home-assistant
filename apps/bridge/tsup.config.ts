@@ -9,11 +9,9 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   bundle: true,
-  // Keep these external — heavier deps that don't need bundling.
+  // Keep native/runtime-only dependencies external.
   external: ["bcrypt", "pino-pretty"],
-  // Workspace packages (`@rehau/*`) are not present in the HA addon's
-  // node_modules at runtime, so they MUST be inlined into the bundle.
-  // tsup defaults to treating every package.json dependency as external —
-  // this regex overrides that for our internal monorepo packages.
-  noExternal: [/^@rehau\//],
+  // Runtime images install only the externals above, so all JavaScript
+  // dependencies and workspace packages must be bundled.
+  noExternal: [/^(?!bcrypt$|pino-pretty$).+/],
 });
