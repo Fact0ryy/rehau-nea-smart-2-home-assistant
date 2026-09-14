@@ -23,6 +23,22 @@ describe("parseDashboard", () => {
     expect(out.operatingMode).toBe("manual_heating");
     expect(out.energyLevel).toBe("standby");
   });
+
+  it("rejects installer pages without an energy-level selector", () => {
+    expect(() => parseDashboard("<html><body><h1>General settings</h1></body></html>"))
+      .toThrow("dashboard energy level selector missing");
+  });
+
+  it("uses the last energy option when firmware marks old and new values selected", () => {
+    const html = `
+      <select id="energyL">
+        <option value="0" selected>Normal global</option>
+        <option value="4" selected>Holiday</option>
+      </select>
+    `;
+
+    expect(parseDashboard(html).energyLevel).toBe("holiday");
+  });
 });
 
 describe("parseRoomList", () => {

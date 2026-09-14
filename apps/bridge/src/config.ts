@@ -31,6 +31,8 @@ const envSchema = z.object({
 
   // http
   HTTP_PORT: z.coerce.number().int().positive().default(8080),
+  DEVICE_PROXY_ENABLED: z.coerce.boolean().default(false),
+  DEVICE_PROXY_PORT: z.coerce.number().int().positive().default(8092),
   HTTP_CORS_ORIGINS: z.string().default(""),
   JWT_SECRET: z.string().min(16),
   JWT_TTL: z.string().default("1h"),

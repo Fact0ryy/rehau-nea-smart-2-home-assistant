@@ -121,6 +121,7 @@ export class ApiClient {
 
   system = {
     get: (): Promise<SystemState> => this.request("GET", "/api/v1/system"),
+    refresh: (): Promise<SystemState> => this.request("POST", "/api/v1/system/refresh"),
     setOperatingMode: (mode: SystemMode): Promise<SystemState> =>
       this.request("PUT", "/api/v1/system/operating_mode", { mode }),
     setEnergyLevel: (level: EnergyLevel): Promise<SystemState> =>

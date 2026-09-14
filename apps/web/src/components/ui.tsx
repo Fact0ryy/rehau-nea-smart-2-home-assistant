@@ -74,7 +74,7 @@ export const Glyph = ({
     case "coffee":        return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V9z"/><path d="M17 11h2.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v3M12 3v3"/></svg>;
     // Briefcase — "work" or "away at work".
     case "briefcase":     return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg>;
-    // Plane — vacation / extended-away.
+    // Plane — holiday / extended-away.
     case "plane":         return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12l-8-2-5 5H6l2-5-5-2v-1l6 1 5-5h2l-2 5 7 1z"/></svg>;
     // Film strip — movie / cinema scene.
     case "film":          return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h3M3 15h3M18 9h3M18 15h3M8 4v16M16 4v16"/></svg>;

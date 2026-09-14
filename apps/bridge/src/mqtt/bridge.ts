@@ -24,7 +24,7 @@ export interface MqttBridgeOptions {
   ops?: { emit: (kind: string, summary: string, detail?: Record<string, unknown>) => void };
 }
 
-const ENERGY = new Set(["normal", "reduced", "standby", "auto", "vacation"] as const);
+const ENERGY = new Set(["normal", "reduced", "standby", "auto", "holiday"] as const);
 const OP_MODE = new Set(["heating_only", "cooling_only", "manual_heating", "manual_cooling"] as const);
 const ROOM_MODE = new Set(["standby", "normal", "reduced", "program", "program_override"] as const);
 

@@ -63,7 +63,7 @@ describe("system + energy enums", () => {
 
   it("energy level decode", () => {
     expect(energyLevelFromDevice(2)).toBe("standby");
-    expect(energyLevelFromDevice(4)).toBe("vacation");
+    expect(energyLevelFromDevice(4)).toBe("holiday");
   });
 });
 

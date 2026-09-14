@@ -189,7 +189,7 @@ export const buildEnergyLevelSelect = (ctx: DiscoveryContext): DiscoveryMessage 
     state_topic: ctx.topics.systemState,
     value_template: "{{ value_json.energyLevel }}",
     command_topic: ctx.topics.setEnergyLevel,
-    options: ["normal", "reduced", "standby", "auto", "vacation"],
+    options: ["normal", "reduced", "standby", "auto", "holiday"],
     availability_topic: ctx.topics.availability,
     device: deviceBlock(ctx),
   },

@@ -24,6 +24,17 @@ export const registerSystemRoutes = (
     },
   }, async () => store.getSystem());
 
+  app.post("/api/v1/system/refresh", {
+    schema: {
+      tags: ["system"],
+      response: { 200: systemStateSchema },
+      security: [{ bearerAuth: [] }],
+    },
+  }, async () => {
+    await commander.refreshSystem();
+    return store.getSystem();
+  });
+
   app.put("/api/v1/system/operating_mode", {
     schema: {
       tags: ["system"],

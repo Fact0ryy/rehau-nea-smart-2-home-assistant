@@ -23,6 +23,7 @@ import {
   MockDeviceSource,
   type DeviceSource,
 } from "./device/source.js";
+import { buildDeviceProxy } from "./http/device-proxy.js";
 import { buildServer } from "./http/server.js";
 import { MqttBridge } from "./mqtt/bridge.js";
 import { createLogger } from "./observability/log.js";
@@ -138,6 +139,9 @@ const main = async (): Promise<void> => {
   const spaDir = resolve(import.meta.dirname, "..", "web");
 
   const app = await buildServer({ config, logger, store, commander, source, poller, spaDir, ops });
+  const deviceProxy = config.DEVICE_PROXY_ENABLED
+    ? await buildDeviceProxy(config)
+    : null;
   poller.start();
 
   // MQTT connection is DEFERRED until boot completes — see
@@ -181,6 +185,10 @@ const main = async (): Promise<void> => {
     await app.listen({ port: config.HTTP_PORT, host: "0.0.0.0" });
   }
 
+  if (deviceProxy) {
+    await deviceProxy.listen({ port: config.DEVICE_PROXY_PORT, host: "0.0.0.0" });
+  }
+
   let shuttingDown = false;
   const shutdown = async (sig: NodeJS.Signals | "manual"): Promise<void> => {
     if (shuttingDown) return;
@@ -197,6 +205,7 @@ const main = async (): Promise<void> => {
     try {
       poller.stop();
       if (mqttBridge) await mqttBridge.stop();
+      if (deviceProxy) await deviceProxy.close();
       await source.close();
       await app.close();
       process.exit(0);

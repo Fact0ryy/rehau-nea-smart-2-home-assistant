@@ -127,3 +127,19 @@ textarea {
   transform-origin: 50% 50%;
 }
 
+@keyframes rehau-button-progress {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(250%); }
+}
+.rehau-button-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: rehau-button-progress 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+

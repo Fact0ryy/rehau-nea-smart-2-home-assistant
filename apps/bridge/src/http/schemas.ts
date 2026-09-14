@@ -26,7 +26,7 @@ export const systemModeSchema = z.enum([
   "manual_cooling",
 ]);
 
-export const energyLevelSchema = z.enum(["normal", "reduced", "standby", "auto", "vacation"]);
+export const energyLevelSchema = z.enum(["normal", "reduced", "standby", "auto", "holiday"]);
 
 export const fanLevelSchema = z.number().int().min(0).max(4);
 

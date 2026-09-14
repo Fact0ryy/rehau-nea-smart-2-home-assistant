@@ -79,26 +79,26 @@ export const operatingModeToDevice = (
 };
 
 export const energyLevelFromDevice = (n: number):
-  | "normal" | "reduced" | "standby" | "auto" | "vacation" => {
+  | "normal" | "reduced" | "standby" | "auto" | "holiday" => {
   switch (n) {
     case 0: return "normal";
     case 1: return "reduced";
     case 2: return "standby";
     case 3: return "auto";
-    case 4: return "vacation";
+    case 4: return "holiday";
     default: return "standby";
   }
 };
 
 export const energyLevelToDevice = (
-  l: "normal" | "reduced" | "standby" | "auto" | "vacation",
+  l: "normal" | "reduced" | "standby" | "auto" | "holiday",
 ): number => {
   switch (l) {
     case "normal":   return 0;
     case "reduced":  return 1;
     case "standby":  return 2;
     case "auto":     return 3;
-    case "vacation": return 4;
+    case "holiday":  return 4;
   }
 };
 

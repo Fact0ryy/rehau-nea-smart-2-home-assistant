@@ -180,7 +180,7 @@ export class LiveDeviceSource implements DeviceSource {
   }
 
   fetchDashboard = async (): Promise<DashboardSnapshot> =>
-    parseDashboard(await this.http.get("/"));
+    parseDashboard(await this.http.get("/user-menu.html"));
 
   fetchRoomList = async (): Promise<RoomListEntry[]> =>
     parseRoomList(await this.http.get("/room-page.html"));

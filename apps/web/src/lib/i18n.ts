@@ -182,7 +182,7 @@ const it = {
     reduced: "Ridotto",
     standby: "Standby",
     auto: "Auto",
-    vacation: "Vacanza",
+    holiday: "Vacanza",
   },
   roomMode: {
     standby: "Standby",
@@ -579,7 +579,7 @@ const en: typeof it = {
     reduced: "Reduced",
     standby: "Standby",
     auto: "Auto",
-    vacation: "Vacation",
+    holiday: "Holiday",
   },
   roomMode: {
     standby: "Standby",

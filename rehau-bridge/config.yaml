@@ -1,6 +1,6 @@
 ---
 name: REHAU Nea Smart 2 Bridge (local)
-version: "6.1.2"
+version: "6.2.0"
 slug: rehau_bridge_local
 description: >-
   Local HTTP/MQTT bridge for the REHAU Nea Smart 2.0 base station.
@@ -30,8 +30,10 @@ panel_title: REHAU
 # /openapi.json clients can reach it without going through ingress.
 ports:
   8080/tcp: 8080
+  8092/tcp: 8092
 ports_description:
   8080/tcp: REST API + Web UI
+  8092/tcp: Direct REHAU web proxy
 
 # "OPEN WEB UI" button → opens the direct LAN URL in a clean tab (no HA
 # sidebar/iframe wrapper). The sidebar entry above still uses ingress for
@@ -50,6 +52,8 @@ options:
   installation_name: "Casa"
   device_request_timeout_ms: 22000
   device_min_gap_ms: 150
+  device_proxy_enabled: false
+  device_proxy_port: 8092
 
   # ── api ──────────────────────────────────────────────────
   api_user: "admin"
@@ -90,6 +94,8 @@ schema:
   installation_name: str
   device_request_timeout_ms: "int(1000,120000)"
   device_min_gap_ms: "int(0,5000)"
+  device_proxy_enabled: bool
+  device_proxy_port: port
 
   api_user: str
   api_password_hash: str

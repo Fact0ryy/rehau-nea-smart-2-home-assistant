@@ -27,6 +27,10 @@ directly to the device on the LAN — no cloud, no e-mail, no 2FA.
 4. Open the side-bar entry to use the bundled web UI for direct setpoint
    and program editing.
 
+Set `device_proxy_enabled: true` to expose the original REHAU web UI on
+port `8092` of the add-on host. No network-interface setting is required:
+the host routing table selects the interface used to reach `device_url`.
+
 ## Notes
 
 - Setting `api_password_hash` to a custom bcrypt is recommended before

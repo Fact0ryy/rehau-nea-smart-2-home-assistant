@@ -64,7 +64,7 @@ phone frame.
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/phone/03-system.png" alt="System" width="280"/><br/>
-      <sub><b>System</b> — heating / cooling / manual tiles, energy-level pills (Normal · Reduced · Standby · Auto · Vacation), live outdoor temperature, and the active winter ↔ summer window.</sub>
+      <sub><b>System</b> — heating / cooling / manual tiles, energy-level pills (Normal · Reduced · Standby · Auto · Holiday), live outdoor temperature, and the active winter ↔ summer window.</sub>
     </td>
   </tr>
   <tr>
@@ -270,6 +270,7 @@ All options live in the add-on's *Configuration* tab. Defaults shown.
 | `installation_name` | `Casa` | Human-readable label, HA device name, MQTT topic slug |
 | `device_request_timeout_ms` | `22000` | Per-request timeout against REHAU |
 | `device_min_gap_ms` | `150` | Cool-down between consecutive REHAU calls — raise to 250-400 ms if you see ConnectTimeout |
+| `device_proxy_enabled` / `device_proxy_port` | `false` / `8092` | Expose the native REHAU web UI through the bridge host; the OS route to `device_url` selects the network interface |
 | `api_user` / `api_password_hash` | `admin` / bcrypt of `admin123` | Web UI auth credentials |
 | `jwt_secret` / `jwt_ttl` | auto / `30d` | Token signing secret and lifetime. Leave secret blank to auto-generate (persisted) |
 | `admin_role` | `installer` | `user` or `installer` (gates the installer tabs in the UI) |

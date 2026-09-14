@@ -26,6 +26,8 @@ export INSTALLATION_NAME="$(opt installation_name)"
 export DEVICE_REQUEST_TIMEOUT_MS="$(opt device_request_timeout_ms)"
 export DEVICE_MIN_GAP_MS="$(opt device_min_gap_ms)"
 export INSTALLER_MAX_SESSION_S=30
+export DEVICE_PROXY_ENABLED="$(opt device_proxy_enabled)"
+export DEVICE_PROXY_PORT="$(opt device_proxy_port)"
 
 export HTTP_PORT=8080
 export HTTP_CORS_ORIGINS=""
@@ -93,6 +95,9 @@ export LOG_FORMAT="$(opt log_format)"
 export ADDON_VERSION="$(bashio::addon.version || echo "unknown")"
 
 bashio::log.info "Starting bridge on :${HTTP_PORT} (installation '${INSTALLATION_NAME}', version ${ADDON_VERSION})."
+if [ "${DEVICE_PROXY_ENABLED}" = "true" ]; then
+  bashio::log.info "REHAU web proxy enabled on :${DEVICE_PROXY_PORT} → ${DEVICE_URL}."
+fi
 
 cd /app
 exec node dist/main.js

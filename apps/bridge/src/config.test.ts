@@ -11,6 +11,8 @@ describe("loadConfig", () => {
   it("parses a minimal env", () => {
     const cfg = loadConfig({ ...baseEnv } as NodeJS.ProcessEnv);
     expect(cfg.HTTP_PORT).toBe(8080);
+    expect(cfg.DEVICE_PROXY_ENABLED).toBe(false);
+    expect(cfg.DEVICE_PROXY_PORT).toBe(8092);
     expect(cfg.ADMIN_ROLE).toBe("installer");
     expect(cfg.MQTT_BASE_TOPIC).toBe("rehau");
     expect(cfg.EXPOSE_IO).toBe(true);
@@ -20,6 +22,16 @@ describe("loadConfig", () => {
   it("enables installer access when DEVICE_INSTALLER_CODE is set", () => {
     const cfg = loadConfig({ ...baseEnv, DEVICE_INSTALLER_CODE: "aabbccdd" } as NodeJS.ProcessEnv);
     expect(hasInstallerAccess(cfg)).toBe(true);
+  });
+
+  it("configures the optional device web proxy", () => {
+    const cfg = loadConfig({
+      ...baseEnv,
+      DEVICE_PROXY_ENABLED: "true",
+      DEVICE_PROXY_PORT: "9000",
+    } as NodeJS.ProcessEnv);
+    expect(cfg.DEVICE_PROXY_ENABLED).toBe(true);
+    expect(cfg.DEVICE_PROXY_PORT).toBe(9000);
   });
 
   it("parses ROOM_FLOORS into an index→name map", () => {

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { EnergyLevel, SystemMode } from "@rehau/types";
@@ -23,7 +24,7 @@ import {
 } from "../../lib/runtime";
 
 const OP_MODES: SystemMode[] = ["heating_only", "cooling_only", "manual_heating", "manual_cooling"];
-const ENERGY: EnergyLevel[] = ["normal", "reduced", "standby", "auto", "vacation"];
+const ENERGY: EnergyLevel[] = ["normal", "reduced", "standby", "auto", "holiday"];
 
 export function System() {
   const { api, logout } = useAuth();
@@ -37,7 +38,19 @@ export function System() {
   // the persistent banner already explains why.
   const writesDisabled = !canWrite(connState);
   const versions = diag?.versions;
-  const sysQ = useQuery({ queryKey: ["system"], queryFn: () => api.system.get(), refetchInterval: 5000 });
+  const initialSystemLoad = useRef(true);
+  const sysQ = useQuery({
+    queryKey: ["system"],
+    queryFn: async () => {
+      if (initialSystemLoad.current) {
+        const system = await api.system.refresh();
+        initialSystemLoad.current = false;
+        return system;
+      }
+      return api.system.get();
+    },
+    refetchInterval: 5000,
+  });
 
   const setOp = useMutation({
     mutationFn: (m: SystemMode) => api.system.setOperatingMode(m),
@@ -197,19 +210,24 @@ export function System() {
       <div style={{ padding: "0 16px", display: "flex", flexWrap: "wrap", gap: 8 }}>
         {ENERGY.map((l) => {
           const active = sys.energyLevel === l;
+          const pending = setEnergy.isPending && setEnergy.variables === l;
           return (
             <button
               key={l}
               type="button"
               onClick={() => setEnergy.mutate(l)}
               disabled={setEnergy.isPending || writesDisabled}
+              aria-busy={pending}
               style={{
-                ...btnStyle(active ? "primary" : "ghost", "sm"),
+                ...btnStyle(active || pending ? "primary" : "ghost", "sm"),
                 padding: "8px 14px",
                 borderRadius: 999,
+                position: "relative",
+                overflow: "hidden",
               }}
             >
               {labelEnergyLevel(l)}
+              {pending && <span className="rehau-button-progress" aria-hidden="true" />}
             </button>
           );
         })}

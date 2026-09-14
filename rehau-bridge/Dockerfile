@@ -17,6 +17,8 @@ COPY run.sh /run.sh
 RUN chmod +x /run.sh \
  && npm install --omit=dev --no-audit --no-fund --loglevel=error
 
+EXPOSE 8080 8092
+
 # tini reaps zombies and forwards SIGTERM so HA can stop the addon cleanly.
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/run.sh"]

@@ -19,7 +19,7 @@ export type EnergyLevel =
   | "reduced"
   | "standby"
   | "auto"
-  | "vacation";
+  | "holiday";
 
 export type AlarmSeverity = "info" | "warning" | "error" | "critical";
 

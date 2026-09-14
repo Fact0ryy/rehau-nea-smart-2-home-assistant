@@ -1,5 +1,11 @@
 # Changelog — REHAU Nea Smart 2 Bridge (local)
 
+## 6.2.0
+
+- Add an optional native REHAU web proxy on port 8092. The proxy runs in the
+  bridge process and uses the operating system route to `device_url`, so no
+  network-interface selection is required.
+
 ## 6.0.18
 
 - **Installer tab icons more visible.** The icons added in 6.0.16

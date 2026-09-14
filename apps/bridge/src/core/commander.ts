@@ -42,6 +42,12 @@ export interface CommanderArgs {
   poller: Poller;
 }
 
+const HOLIDAY_VERIFY_ATTEMPTS = 10;
+const HOLIDAY_VERIFY_DELAY_MS = 2_000;
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * All writes funnel through here. Serialisation is provided by DeviceClient's
  * single-flight chain. After each write we force a targeted re-poll so the
@@ -220,12 +226,28 @@ export class Commander {
     }
   }
 
+  async refreshSystem(): Promise<void> {
+    await this.a.poller.refreshDashboard();
+  }
+
   async setEnergyLevel(level: EnergyLevel): Promise<void> {
     const prev = this.a.store.getSystem().energyLevel;
     this.a.store.patchSystem({ energyLevel: level });
     try {
       await this.a.source.setEnergyLevel(level);
-      await this.a.poller.refreshDashboard();
+      if (level !== "holiday") {
+        await this.a.poller.refreshDashboard();
+        return;
+      }
+
+      // Firmware 6.15 applies Holiday after the POST response. Keep the
+      // command pending until a delayed dashboard read confirms the value.
+      for (let attempt = 0; attempt < HOLIDAY_VERIFY_ATTEMPTS; attempt += 1) {
+        await delay(HOLIDAY_VERIFY_DELAY_MS);
+        await this.a.poller.refreshDashboard();
+        if (this.a.store.getSystem().energyLevel === level) return;
+      }
+      throw new Error("energy level verification failed");
     } catch (err) {
       this.a.store.patchSystem({ energyLevel: prev });
       throw err;

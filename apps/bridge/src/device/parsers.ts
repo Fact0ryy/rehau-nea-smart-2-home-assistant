@@ -181,9 +181,13 @@ export const parseDashboard = (html: string): DashboardSnapshot => {
   const opSelected = $("#opMode option[selected]").attr("value")
     ?? $("#opMode option").first().attr("value")
     ?? "5";
-  const elSelected = $("#energyL option[selected]").attr("value")
-    ?? $("#energyL option").first().attr("value")
-    ?? "2";
+  // Firmware 6.15 can leave `selected` on the previous option and append it
+  // to the new one. Browsers resolve that invalid markup to the last option.
+  const elSelected = $("#energyL option[selected]").last().attr("value")
+    ?? $("#energyL option").first().attr("value");
+  if (elSelected === undefined) {
+    throw new Error("dashboard energy level selector missing");
+  }
 
   // The dashboard has a single `<h3 class="textCenter">` carrying the outdoor
   // temperature (eg. "Temp. esterna. 16.6" in Italian, "Ext. temperature 16.6"
