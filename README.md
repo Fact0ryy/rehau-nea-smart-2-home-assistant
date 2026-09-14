@@ -1,32 +1,19 @@
-# REHAU Nea Smart 2 — Home Assistant add-ons
+# Betterehau — Local REHAU Bridge for Home Assistant
 
 Local, cloud-free Home Assistant integration for the **REHAU Nea Smart 2.0**
 heating / cooling base station. Talks straight to the device on the LAN
-(HTTP scrape) and re-publishes everything as MQTT discovery entities plus a
-clean web UI served via HA ingress.
+(HTTP scrape) and re-publishes everything as MQTT discovery entities. The
+Bridge, control UI, REST API, and native REHAU proxy run together in one Docker
+container.
 
 > **About this fork.** This fork builds on
 > [`manuxio/rehau-nea-smart-2-home-assistant`](https://github.com/manuxio/rehau-nea-smart-2-home-assistant)
 > and adds robust energy-level parsing, verified Holiday writes, a live System
 > refresh on page entry, and an optional proxy for the native REHAU web UI.
 
-> **v6.0.0 is a complete rewrite.** The previous releases used the REHAU
-> cloud (Playwright login, e-mail 2FA, OAuth2). This version drops all of
-> that — it speaks HTTP directly to the base station. No e-mail, no 2FA,
-> no third-party servers, no rate limits, no privacy surface.
-
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A//github.com/Fact0ryy/rehau-nea-smart-2-home-assistant)
-
-> ⚡ **No Home Assistant? No add-on? No problem.** There's now a standalone
-> **firmware** for the Olimex ESP32-POE that becomes the whole integration on
-> its own — REST API, MQTT + HA Discovery, and a resident web app served
-> straight from the board, fully local. See **[`FIRMWARE.md`](FIRMWARE.md)**.
-
-> 📘 **First time here?** Read [`INSTALL.md`](INSTALL.md) — a step-by-step,
-> beginner-friendly walkthrough that covers switching the REHAU base
-> station into Access Point (Wi-Fi) mode, joining your Home Assistant host
-> to it, and installing the add-on. Every networking detail is explained
-> from scratch.
+This fork uses the local-only architecture introduced in v6.0.0. It does not
+use the REHAU cloud, a Home Assistant Supervisor add-on, or separate ESP32
+firmware.
 
 ---
 
@@ -34,7 +21,7 @@ clean web UI served via HA ingress.
 
 ### In Home Assistant
 
-Once the add-on is installed and started, HA discovers a single
+Once the container is running and connected to MQTT, HA discovers a single
 MQTT device with all the entities — climate per room, system selects,
 sensors, switches, diagnostics — populated from the live state of the
 REHAU base station.
@@ -55,7 +42,7 @@ phone frame.
   <tr>
     <td align="center" width="50%">
       <img src="docs/screenshots/phone/00-login.png" alt="Login" width="280"/><br/>
-      <sub><b>Login</b> — JWT-bearer, local-only. No e-mail, no cloud, no 2FA. Under HA ingress the form is skipped entirely: the bridge reads <code>X-Ingress-Path</code> and hands the SPA a token automatically.</sub>
+      <sub><b>Login</b> — JWT-bearer, local-only. No e-mail, no cloud, no 2FA.</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/phone/01-home.png" alt="Dashboard" width="280"/><br/>
@@ -106,14 +93,16 @@ phone frame.
 
 ---
 
-## Contents
+## Runtime
 
-| Add-on | Slug | What it does |
-|---|---|---|
-| [REHAU Nea Smart 2 Bridge (local)](./rehau-bridge) | `rehau_bridge_local` | Polls the base station, publishes HA MQTT discovery, serves a Web UI under ingress, exposes a REST API + Swagger. |
+| Component | Port | Purpose |
+|---|---:|---|
+| Betterehau Bridge and Web UI | `8081` | Polling, MQTT discovery, REST API, Swagger, and React UI |
+| Native REHAU proxy | `8092` | Access to the base station's AP-only web interface |
+| MQTT broker | external | Connects Betterehau to Home Assistant |
 
-The add-on supports `amd64`, `aarch64` and `armv7` — i.e. every host HA
-Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
+The production container is named `rehau-bridge-proxy` and uses the operating
+system route to reach the REHAU access point.
 
 ---
 
@@ -134,10 +123,8 @@ Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
   visible as diagnostic sensors when `expose_calibration: true`.
 - **Raw I/O** of master + every U-module (RZ, RELAY, DI, AI, AO) when
   `expose_io: true`, useful for power-user automations.
-- **Web UI** (React SPA, dark/light theme, EN/IT) under HA ingress, also
-  exposed directly on `http://<ha-host>:8080/` for fullscreen / PWA use.
-- **Auto-login through HA ingress** — clicking the sidebar entry drops
-  you straight into the dashboard, no password prompt.
+- **Web UI** (React SPA, dark/light theme, EN/IT) exposed directly on
+  `http://<docker-host>:8081/` for fullscreen / PWA use.
 - **Reliable global energy control** — malformed duplicate `selected`
   options from REHAU firmware are resolved like a browser, and Holiday
   writes remain pending until the base station confirms them.
@@ -151,26 +138,18 @@ Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
 
 ## How it works
 
-```
-                                           ┌────────────────────────────┐
-                                           │  Home Assistant (Supervisor)│
-                          HA add-on        │                            │
-                       ┌──────────────────┐│   Mosquitto add-on (mqtt)  │
-                       │                  ││             ▲              │
-   LAN HTTP            │    Node.js       ││             │              │
-   ┌───────────┐       │    Fastify       ││             │              │
-   │           │ ◄───► │    + cheerio     ├┴─MQTT─►──────┘              │
-   │ REHAU base│       │    + mqtt.js     │                             │
-   │ station   │       │    + React SPA   ├──── HA Ingress ─► sidebar  │
-   │           │       │                  │                             │
-   └───────────┘       └──────┬───────────┘                             │
-                              │                                         │
-                              └────── REST + Swagger ─► port 8080 ──────┤
-                                                                        │
-                                                              Browser / │
-                                                              PWA       │
-                                                                        │
-                                                          └─────────────┘
+```text
+REHAU base (AP mode, 192.168.0.2)
+               |
+               | local HTTP via the Docker host route
+               v
+rehau-bridge-proxy
+  |-- Bridge + Web UI + REST/Swagger :8081
+  |-- Native REHAU proxy             :8092
+  `-- MQTT -------------------------> external broker
+                                           |
+                                           v
+                                    Home Assistant
 ```
 
 1. A poller scrapes the REHAU device's installer web UI on a tight
@@ -186,7 +165,7 @@ Supervisor runs on (Intel NUC, Raspberry Pi 4/5, ODROID, generic ARM SBC).
 
 ### Why local, not cloud
 
-| | Local (this add-on) | Cloud-based (previous v5 line) |
+| | Local (this bridge) | Cloud-based (previous v5 line) |
 |---|---|---|
 | Latency | ~150 ms LAN round-trip | seconds — and a Playwright session has to be running |
 | Auth | One installer code | E-mail account + password + 2FA via POP3 / OAuth2 |
@@ -203,106 +182,125 @@ only run one at a time.
 
 ## Prerequisite — REHAU base station in AP mode
 
-Before the add-on can talk to the device you need the REHAU Nea Smart 2.0
-base station to be reachable over your LAN with its **local web
-interface enabled** (the "AP / Access Point" setup mode in REHAU's
-manual). The cloud-bound mode (linked to a REHAU account, accessed
-only through the REHAU app) is **not** what we want.
+The local REHAU web interface is available only while the base station is in
+Access Point mode, normally at `http://192.168.0.2`. The Docker host needs a
+network interface connected to that access point and a route to `192.168.0.2`.
+Betterehau needs no interface selector; the operating system chooses the route.
 
-If your installation is currently cloud-only, you'll need to:
-
-1. Reset / re-pair the base station and choose the local / AP setup
-   flow during commissioning (see the REHAU quick-start in the box).
-2. Note the LAN IP the base station picks up via DHCP — that's the
-   `device_url` you'll paste into the add-on.
-3. Find the 8-character installer code on the device's *Unique Code*
-   page (or the sticker / commissioning sheet). That's the
-   `device_installer_code`.
-
-> 📘 **A full step-by-step installation guide — including AP-mode
-> setup, joining the HA host to the base station's Wi-Fi, and the
-> first-time bridge configuration — lives in
-> [`INSTALL.md`](INSTALL.md).** Start there if any of the above is
-> unfamiliar; the *Quick start* below assumes the base station is
-> already on your LAN with the local interface up.
+You also need the first eight characters of the REHAU unique code as the
+installer code. Cloud mode is not supported by this bridge.
 
 ## Quick start
 
-1. **Add this repository** to your Home Assistant Supervisor:
-   - Settings → Add-ons → Add-on Store → **⋮** (top right) → **Repositories**
-   - Paste:
-     `https://github.com/Fact0ryy/rehau-nea-smart-2-home-assistant`
-   - **Add** and close.
+Clone the repository and create a `.env` file next to `docker-compose.yml`.
+At minimum, set `DEVICE_INSTALLER_CODE`, `MQTT_URL`, `JWT_SECRET`, and
+`API_PASSWORD_HASH`.
 
-   *(Or click the **Add to Home Assistant** badge at the top of this README.)*
+### Docker Compose sample
 
-2. **Install** the *REHAU Nea Smart 2 Bridge (local)* add-on from the
-   Add-on Store (you'll find it under the new repository, near the
-   bottom of the page).
+This sample uses host networking so the container inherits the Linux host's
+route to the REHAU access point.
 
-3. **Configure** — open the add-on, *Configuration* tab, and set at
-   minimum:
-   - `device_url` — e.g. `http://10.0.0.50` (the REHAU base station IP)
-   - `device_installer_code` — the 8-character installer code from the
-     REHAU device's *Unique Code* page
-   - `installation_name` — a short label shown in HA and used to slug
-     the MQTT topic path (e.g. `Casa`, `Office`, `Apartment-3F`)
+```yaml
+services:
+  rehau-bridge-proxy:
+    build: .
+    image: rehau-bridge:local
+    container_name: rehau-bridge-proxy
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      DEVICE_URL: http://192.168.0.2
+      HTTP_PORT: 8081
+      DEVICE_PROXY_ENABLED: "true"
+      DEVICE_PROXY_PORT: 8092
+      MQTT_BASE_TOPIC: rehau
+      MQTT_HA_DISCOVERY: "true"
+      INSTALLATION_NAME: Home
+      ADMIN_ROLE: installer
+      EXPOSE_IO: "true"
+      EXPOSE_CALIBRATION: "false"
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+```
 
-   Leave the MQTT fields blank: if you have the **Mosquitto broker**
-   add-on installed and active, the bridge auto-discovers it. Override
-   only if you use an external broker.
+Sample `.env`:
 
-4. **Start** the add-on. Within ~30 s you'll see:
-   - one `climate.<installation>_<room>` entity per zone
-   - `sensor.<installation>_<room>_humidity` per zone
-   - `select.<installation>_operating_mode`, `_energy_level`
-   - `binary_sensor.<installation>_alarms_active`
-   - switches for room lock / auto-start / window detection, plus the
-     room light when applicable
-   - diagnostic sensors for fancoil running / fan speed / flap (rooms
-     that have a fancoil assigned and active in the current system mode)
-   - diagnostic binary_sensors / sensors for I/O channels (if
-     `expose_io: true`)
-   - diagnostic sensors for calibration offsets (if
-     `expose_calibration: true`)
+```dotenv
+DEVICE_INSTALLER_CODE=12345678
+MQTT_URL=mqtt://192.168.178.79:1883
+MQTT_USERNAME=rehau
+MQTT_PASSWORD=change-me
+JWT_SECRET=replace-with-at-least-32-random-characters
+API_USER=admin
+API_PASSWORD_HASH=replace-with-a-bcrypt-hash
+```
 
-5. **Open the Web UI**:
-   - Sidebar icon **REHAU** → opens inside HA via ingress (auto-login).
-   - Or `http://<ha-host>:8080/` → fullscreen, PWA-installable.
+Generate the API password hash with `npm run hashpw -- <password>`, then start
+the container:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f rehau-bridge-proxy
+```
+
+With MQTT discovery enabled, Home Assistant creates:
+
+- one `climate.<installation>_<room>` entity per zone
+- `sensor.<installation>_<room>_humidity` per zone
+- `select.<installation>_operating_mode`, `_energy_level`
+- `binary_sensor.<installation>_alarms_active`
+- switches for room lock / auto-start / window detection, plus the room light
+  when applicable
+- diagnostic sensors for fancoil running / fan speed / flap
+- diagnostic I/O entities when `EXPOSE_IO=true`
+- diagnostic calibration sensors when `EXPOSE_CALIBRATION=true`
+
+Open the interfaces:
+
+- Betterehau: `http://<docker-host>:8081/`
+- Native REHAU UI: `http://<docker-host>:8092/`
 
 ---
 
 ## Configuration reference
 
-All options live in the add-on's *Configuration* tab. Defaults shown.
+All options are environment variables. `docker-compose.yml` can load secrets
+and host-specific values from `.env`.
 
 | Key | Default | What |
 |---|---|---|
-| `device_url` | `http://10.0.0.1` | LAN URL of the REHAU base station |
-| `device_installer_code` | *(empty)* | 8-char installer password, required |
-| `installation_name` | `Casa` | Human-readable label, HA device name, MQTT topic slug |
-| `device_request_timeout_ms` | `22000` | Per-request timeout against REHAU |
-| `device_min_gap_ms` | `150` | Cool-down between consecutive REHAU calls — raise to 250-400 ms if you see ConnectTimeout |
-| `device_proxy_enabled` / `device_proxy_port` | `false` / `8092` | Expose the native REHAU web UI through the bridge host; the OS route to `device_url` selects the network interface |
-| `api_user` / `api_password_hash` | `admin` / bcrypt of `admin123` | Web UI auth credentials |
-| `jwt_secret` / `jwt_ttl` | auto / `30d` | Token signing secret and lifetime. Leave secret blank to auto-generate (persisted) |
-| `admin_role` | `installer` | `user` or `installer` (gates the installer tabs in the UI) |
-| `mqtt_url` / `mqtt_username` / `mqtt_password` | *(empty)* | Override MQTT broker; leave blank to use HA Mosquitto |
-| `mqtt_base_topic` | `rehau` | Root MQTT topic — installation slug is appended (e.g. `rehau/casa/...`) |
-| `mqtt_ha_discovery` | `true` | Publish HA MQTT discovery payloads |
-| `mqtt_ha_discovery_prefix` | `homeassistant` | HA's discovery prefix; only change if your HA does |
-| `poll_dashboard_s` / `poll_rooms_s` / `poll_room_detail_s` / `poll_messages_s` / `poll_io_s` | 30 / 15 / 60 / 300 / 10 | Polling intervals — lower = more responsive, more LAN traffic to REHAU |
-| `expose_io` | `true` | Publish raw I/O diagnostics (keeps installer session open) |
-| `expose_calibration` | `true` | Publish calibration offsets as diagnostic sensors |
-| `room_floors` | *(empty)* | UI-only floor mapping, format `0:Floor 1,1:Floor 1,2:Ground floor` |
-| `log_level` / `log_format` | `info` / `json` | `fatal/error/warn/info/debug/trace`, `json` or `pretty` |
+| `DEVICE_URL` | `http://10.0.0.1` in Compose | REHAU base URL; use `http://192.168.0.2` in AP mode |
+| `DEVICE_INSTALLER_CODE` | *(empty)* | First 8 characters of the REHAU unique code |
+| `DEVICE_REQUEST_TIMEOUT_MS` / `DEVICE_MIN_GAP_MS` | `5000` / `150` | Request timeout and minimum delay between device calls |
+| `HTTP_PORT` | `8080` | Bridge, API, and Web UI listener inside the container |
+| `DEVICE_PROXY_ENABLED` / `DEVICE_PROXY_PORT` | `false` / `8092` | Enable the native REHAU proxy and choose its listener port |
+| `API_USER` / `API_PASSWORD_HASH` | `admin` / required | Local Web UI credentials; password must be a bcrypt hash |
+| `JWT_SECRET` / `JWT_TTL` | required / `1h` | Token signing secret and lifetime |
+| `ADMIN_ROLE` | `installer` | `user` or `installer` Web UI access |
+| `INSTALLATION_NAME` | `Casa` | Home Assistant device name and MQTT topic slug |
+| `MQTT_URL` / `MQTT_USERNAME` / `MQTT_PASSWORD` | *(empty)* | External MQTT broker connection |
+| `MQTT_BASE_TOPIC` / `MQTT_HA_DISCOVERY` | `rehau` / `true` | MQTT root topic and Home Assistant discovery |
+| `POLL_DASHBOARD_S` / `POLL_ROOMS_S` | `120` / `120` | Dashboard and room-list polling intervals |
+| `POLL_MESSAGES_S` / `POLL_IO_S` | `300` / `10` | Message and I/O polling intervals |
+| `EXPOSE_IO` / `EXPOSE_CALIBRATION` | `true` / `false` | Diagnostic MQTT entities |
+| `ROOM_FLOORS` | *(empty)* | Initial floor mapping, for example `0:First,1:Ground` |
+| `LOG_LEVEL` / `LOG_FORMAT` | `info` / `json` | Logging verbosity and output format |
 
 ### Native REHAU web proxy
 
-Set `device_proxy_enabled: true` to make the base station's AP-only web UI
+Set `DEVICE_PROXY_ENABLED=true` to make the base station's AP-only web UI
 reachable through the bridge host. Open
-`http://<bridge-host>:<device_proxy_port>/`; the default proxy port is `8092`.
-The bridge follows the operating system route to `device_url`, so a host with a
+`http://<bridge-host>:<DEVICE_PROXY_PORT>/`; the default proxy port is `8092`.
+The bridge follows the operating system route to `DEVICE_URL`, so a host with a
 dedicated interface for the REHAU access point needs no interface setting in the
 application.
 
@@ -343,8 +341,7 @@ broker without collisions.
 
 ## Web UI
 
-The bundled React SPA lives at `/` and is also reachable behind HA
-ingress (sidebar icon "REHAU"). Features:
+The bundled React SPA lives at `/` on the Bridge port. Features:
 
 - **Dashboard** — room cards with current temperature, setpoint, mode
   pill, program strip, fancoil status (icon spins when running), light
@@ -372,25 +369,23 @@ REST + SSE are mounted under `/api/v1/`; OpenAPI 3 spec at
 ## Common issues
 
 **The bridge starts but I see no rooms.**
-The base station is unreachable. Check `device_url`, ping it from the
-HA host, verify the LAN. The bridge logs the first failure with the
+The base station is unreachable. Check `DEVICE_URL`, ping it from the
+Docker host, and verify the route. The bridge logs the first failure with the
 exact URL it tried.
 
 **`ConnectTimeout` errors in the log.**
 REHAU's TCP socket table is small; back-to-back requests can exhaust
-TIME_WAIT. Raise `device_min_gap_ms` to `250` or `400`. The bridge
+TIME_WAIT. Raise `DEVICE_MIN_GAP_MS` to `250` or `400`. The bridge
 already enforces a cool-down + retry.
 
 **MQTT entities not appearing in HA.**
-Make sure the **Mosquitto** add-on is installed and started; the bridge
-auto-discovers it. If you use an external broker, set `mqtt_url`
-explicitly. Check the addon log for `mqtt connecting` and
+Make sure the configured broker is reachable and set `MQTT_URL` explicitly.
+Check the container log for `mqtt connecting` and
 `ha discovery published`.
 
 **Web UI loads but every action fails with 401.**
-Your JWT expired. Default TTL is 30 days — long enough for mobile PWA
-use. Lower it via `jwt_ttl` if you want stricter sessions, or higher
-(`365d`, `100y`) if you really never want re-login.
+Your JWT expired. The default TTL is `1h`; set `JWT_TTL=30d` or another
+duration appropriate for your environment.
 
 **Fancoil button doesn't appear for a room that has a fancoil.**
 REHAU's installer page (`installer-room-set-up.html`) field `FanH`
@@ -403,8 +398,7 @@ the REHAU display either, fix `FanH` there first.
 ## Development
 
 Source for the bridge and web UI lives in this repository under `apps/`, with
-shared types under `packages/`. The packaged Home Assistant add-on is under
-`rehau-bridge/`.
+shared types under `packages/`.
 
 Requires Node.js 22 or newer. Install dependencies and validate a change with:
 
@@ -415,8 +409,8 @@ npm run typecheck
 npm run build
 ```
 
-Releases bump `version` in `rehau-bridge/config.yaml`; HA's Add-on
-Store shows an *Update* button when it differs from what's installed.
+The production image is built from the root `Dockerfile` and orchestrated with
+`docker-compose.yml`.
 
 ---
 
