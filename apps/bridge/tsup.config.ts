@@ -13,8 +13,8 @@ export default defineConfig({
   splitting: false,
   bundle: true,
   // Keep native/runtime-only dependencies external.
-  external: ["bcrypt", "pino-pretty"],
+  external: ["@fastify/swagger-ui", "bcrypt", "pino-pretty"],
   // Runtime images install only the externals above, so all JavaScript
   // dependencies and workspace packages must be bundled.
-  noExternal: [/^(?!bcrypt$|pino-pretty$).+/],
+  noExternal: [/^(?!@fastify\/swagger-ui$|bcrypt$|pino-pretty$).+/],
 });
