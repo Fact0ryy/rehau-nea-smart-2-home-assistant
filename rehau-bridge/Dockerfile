@@ -15,6 +15,7 @@ COPY package.json ./
 COPY run.sh /run.sh
 
 RUN chmod +x /run.sh \
+ && chmod -R a+rX /app/dist /app/web \
  && npm install --omit=dev --no-audit --no-fund --loglevel=error
 
 EXPOSE 8080 8092

@@ -16,7 +16,7 @@ RUN npm ci --workspaces --include-workspace-root \
 FROM deps AS build
 COPY . .
 # tsup bundles the bridge into dist/main.js with all deps inlined except
-# the declared `external`s (bcrypt, pino-pretty). Vite builds the SPA.
+# the declared runtime externals. Vite builds the SPA.
 RUN npm run build -w @rehau/bridge \
  && npm run build -w @rehau/web
 
@@ -35,6 +35,7 @@ COPY <<'EOF' /app/package.json
   "private": true,
   "type": "module",
   "dependencies": {
+    "@fastify/swagger-ui": "^6.1.1",
     "bcrypt": "^6.0.0",
     "pino-pretty": "^13.1.3"
   }
@@ -49,6 +50,7 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ \
 # Bridge bundle + React SPA.
 COPY --from=build /app/apps/bridge/dist ./dist
 COPY --from=build /app/apps/web/dist    ./web
+RUN chmod -R a+rX /app/dist /app/web
 
 USER app
 EXPOSE 8080 8092
