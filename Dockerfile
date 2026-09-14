@@ -1,13 +1,12 @@
 # syntax=docker/dockerfile:1.7
 
 # ─── deps ────────────────────────────────────────────────────────────
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 ENV CI=1
 RUN apk add --no-cache --virtual .build-deps python3 make g++
 COPY package*.json tsconfig.base.json ./
 COPY packages/types/package.json    packages/types/
-COPY packages/api-client/package.json packages/api-client/
 COPY apps/bridge/package.json       apps/bridge/
 COPY apps/web/package.json          apps/web/
 RUN npm ci --workspaces --include-workspace-root \
@@ -22,7 +21,7 @@ RUN npm run build -w @rehau/bridge \
  && npm run build -w @rehau/web
 
 # ─── runtime ─────────────────────────────────────────────────────────
-FROM node:22-alpine
+FROM node:24-alpine
 RUN apk add --no-cache wget \
  && addgroup -S app && adduser -S app -G app
 WORKDIR /app
@@ -36,8 +35,8 @@ COPY <<'EOF' /app/package.json
   "private": true,
   "type": "module",
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "pino-pretty": "^13.0.0"
+    "bcrypt": "^6.0.0",
+    "pino-pretty": "^13.1.3"
   }
 }
 EOF

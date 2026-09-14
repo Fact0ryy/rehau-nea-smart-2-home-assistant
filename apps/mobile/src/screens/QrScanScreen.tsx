@@ -129,7 +129,8 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 50 },
   cameraHolder: { flex: 1, position: "relative" },
   reticleHolder: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    inset: 0,
     alignItems: "center",
     justifyContent: "center",
     padding: 32,

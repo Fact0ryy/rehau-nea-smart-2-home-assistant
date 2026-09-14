@@ -400,7 +400,7 @@ the REHAU display either, fix `FanH` there first.
 Source for the bridge and web UI lives in this repository under `apps/`, with
 shared types under `packages/`.
 
-Requires Node.js 22 or newer. Install dependencies and validate a change with:
+Requires Node.js 24 or newer. Install dependencies and validate a change with:
 
 ```bash
 npm ci

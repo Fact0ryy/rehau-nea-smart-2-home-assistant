@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# HA base images are Alpine. Node 22+ is needed by tsup's emitted bundle.
+# HA base images are Alpine. Node 24+ is needed by tsup's emitted bundle.
 RUN apk add --no-cache nodejs npm bash tini
 
 WORKDIR /app

@@ -105,7 +105,7 @@ export const systemStateSchema = z.object({
   fw: z.object({
     master: z.string(),
     web: z.string(),
-    umodules: z.record(z.string()),
+    umodules: z.record(z.string(), z.string()),
   }),
   uniqueCode: z.string(),
   ssid: z.string(),
@@ -197,6 +197,7 @@ export const ioSchema = z.object({
     di: z.array(z.number()),
   }),
   umodules: z.record(
+    z.string(),
     z.object({
       relay: z.array(z.number()),
       di: z.array(z.number()),

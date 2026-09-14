@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
   webHolder: { flex: 1, position: "relative" },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    inset: 0,
     backgroundColor: theme.bg,
     alignItems: "center",
     justifyContent: "center",

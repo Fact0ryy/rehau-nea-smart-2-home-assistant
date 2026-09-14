@@ -170,11 +170,11 @@ export const buildServer = async ({
       prefix: "/",
       setHeaders: (res, filePath) => {
         if (filePath.endsWith(".html")) {
-          res.setHeader("Cache-Control", "no-cache, must-revalidate");
+          res.header("Cache-Control", "no-cache, must-revalidate");
         } else if (/\/assets\//.test(filePath)) {
           // Content-hashed — long-lived. immutable hints the client
           // it can skip even the conditional GET.
-          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res.header("Cache-Control", "public, max-age=31536000, immutable");
         }
       },
     });

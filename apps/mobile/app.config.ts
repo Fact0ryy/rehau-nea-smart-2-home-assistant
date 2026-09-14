@@ -7,13 +7,7 @@ const config: ExpoConfig = {
   orientation: "portrait",
   scheme: "rehau-nea",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
   icon: "./assets/icon.png",
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#0F0B1A",
-  },
   ios: {
     bundleIdentifier: "io.iqera.rehau.nea",
     supportsTablet: true,
@@ -35,6 +29,15 @@ const config: ExpoConfig = {
     permissions: ["android.permission.CAMERA"],
   },
   plugins: [
+    [
+      "expo-splash-screen",
+      {
+        image: "./assets/splash.png",
+        resizeMode: "contain",
+        backgroundColor: "#0F0B1A",
+      },
+    ],
+    "expo-status-bar",
     [
       "expo-build-properties",
       {
